@@ -1,0 +1,269 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semester 5 Tracker</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f5fa;
+  color: #20263a;
+}
+
+header {
+  background: #243b80;
+  color: white;
+  padding: 26px 18px;
+  text-align: center;
+}
+
+header h1 { margin: 0 0 8px; }
+header p { margin: 0; color: #dce5ff; }
+
+main {
+  max-width: 900px;
+  margin: auto;
+  padding: 18px;
+}
+
+.summary, .subject {
+  background: white;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 3px 12px #1725540c;
+}
+
+.progress-bg {
+  height: 10px;
+  background: #e5e9f3;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+#progress {
+  width: 0%;
+  height: 100%;
+  background: #3d9b73;
+  transition: width .2s;
+}
+
+.subject h2 {
+  margin: 0 0 14px;
+  color: #243b80;
+}
+
+h3 {
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.task {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid #edf0f6;
+}
+
+.task input {
+  width: 19px;
+  height: 19px;
+  accent-color: #318461;
+}
+
+.task label { flex: 1; }
+.task input:checked + label {
+  text-decoration: line-through;
+  color: #8490a5;
+}
+
+button {
+  border: 0;
+  border-radius: 9px;
+  padding: 12px 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.primary {
+  background: #243b80;
+  color: white;
+}
+
+.secondary {
+  background: #e8ecf6;
+  color: #243b80;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+#status {
+  font-size: 13px;
+  color: #318461;
+  margin: 8px 0;
+}
+
+footer {
+  text-align: center;
+  color: #748097;
+  padding: 20px;
+  font-size: 13px;
+}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>My Semester 5 🎓</h1>
+  <p>Stay organized. Finish your work. Stress less.</p>
+</header>
+
+<main>
+  <section class="summary">
+    <h2>My Progress</h2>
+    <p id="count">0 of 36 tasks completed</p>
+    <div class="progress-bg">
+      <div id="progress"></div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="primary" onclick="saveProgress()">
+      💾 Save Progress
+    </button>
+    <button class="secondary" onclick="clearProgress()">
+      ↩ Clear Saved Progress
+    </button>
+  </div>
+
+  <p id="status" aria-live="polite">Your changes are not saved yet.</p>
+
+  <div id="subjects"></div>
+</main>
+
+<footer>Made by a student, for students ❤️</footer>
+
+<script>
+// Replace these with your actual subject names.
+const subjectNames = [
+  "Subject 1",
+  "Subject 2",
+  "Subject 3",
+  "Subject 4",
+  "Subject 5",
+  "Subject 6"
+];
+
+const categories = [
+  { name: "Assignments", tasks: 3 },
+  { name: "Journals / Practicals", tasks: 3 }
+];
+
+const container = document.getElementById("subjects");
+let saved = JSON.parse(
+  localStorage.getItem("semester5Tracker") || "{}"
+);
+
+subjectNames.forEach((subject, s) => {
+  const card = document.createElement("section");
+  card.className = "subject";
+
+  const heading = document.createElement("h2");
+  heading.textContent = subject;
+  card.appendChild(heading);
+
+  categories.forEach((category, c) => {
+    const subheading = document.createElement("h3");
+    subheading.textContent = category.name;
+    card.appendChild(subheading);
+
+    for (let i = 0; i < category.tasks; i++) {
+      const id = `${s}-${c}-${i}`;
+      const row = document.createElement("div");
+      row.className = "task";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.id = id;
+      checkbox.checked = !!saved[id];
+
+      const label = document.createElement("label");
+      label.htmlFor = id;
+      label.textContent = `${category.name === "Assignments"
+        ? "Assignment"
+        : "Journal"} ${i + 1}`;
+
+      checkbox.addEventListener("change", () => {
+        updateProgress();
+        document.getElementById("status").textContent =
+          "Unsaved changes — tap Save Progress.";
+      });
+
+      row.append(checkbox, label);
+      card.appendChild(row);
+    }
+  });
+
+  container.appendChild(card);
+});
+
+function updateProgress() {
+  const boxes = [...document.querySelectorAll(
+    '.task input[type="checkbox"]'
+  )];
+
+  const done = boxes.filter(box => box.checked).length;
+  document.getElementById("count").textContent =
+    `${done} of ${boxes.length} tasks completed`;
+
+  document.getElementById("progress").style.width =
+    `${boxes.length ? done / boxes.length * 100 : 0}%`;
+}
+
+function saveProgress() {
+  const state = {};
+  document.querySelectorAll(".task input").forEach(box => {
+    state[box.id] = box.checked;
+  });
+
+  localStorage.setItem("semester5Tracker", JSON.stringify(state));
+  saved = state;
+
+  document.getElementById("status").textContent =
+    "✓ Progress saved on this device!";
+}
+
+function clearProgress() {
+  if (!confirm("Clear all saved progress and untick every task?")) {
+    return;
+  }
+
+  localStorage.removeItem("semester5Tracker");
+  document.querySelectorAll(".task input").forEach(box => {
+    box.checked = false;
+  });
+
+  saved = {};
+  updateProgress();
+
+  document.getElementById("status").textContent =
+    "Saved progress cleared.";
+}
+
+updateProgress();
+</script>
+</body>
+</html>
